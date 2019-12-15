@@ -1,0 +1,41 @@
+management:
+  health:
+    binders:
+      enabled: true
+spring:
+  cloud:
+    stream:
+      default:
+        contentType: application/json
+      bindings:
+        simple-message-in:
+          group: consumerGroup            # just a part of queue name(ending) subscribed to 'destination'
+          destination: simple.message.in
+          max-attempts: 1
+          requeue-rejected: true
+        simple-message-out:
+          destination: simple.message.out
+      rabbit:
+        bindings:
+          simple-message-in:
+            consumer:
+              #max-concurency: 1           # The maximum number of consumers. Not supported when the containerType is direct
+              requeue-rejected: true
+              bind-queue: true
+              auto-bind-dlq: true
+              dlq-ttl: 5000               # Default time to live to apply to the dead letter queue when declared (in milliseconds)
+              dlq-dead-letter-exchange:
+        simple-message-out:
+          producer:
+            exchange-type: fanout
+        binders:
+          local_rabbit:
+            type: rabbit
+            environment:
+              spring:
+                rabbitmq:
+                  host: localhost
+                  port: 5672
+                  username: guest
+                  password: guest
+                  virtual-host: /
