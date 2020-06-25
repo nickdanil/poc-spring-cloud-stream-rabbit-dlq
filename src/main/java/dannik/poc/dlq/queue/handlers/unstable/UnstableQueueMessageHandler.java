@@ -1,14 +1,12 @@
-package dannik.poc.dlq.queue.handlers;
+package dannik.poc.dlq.queue.handlers.unstable;
 
-import lombok.Data;
+import dannik.poc.dlq.queue.handlers.QueueMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.integration.support.MessageBuilder;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
@@ -16,13 +14,11 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@EnableBinding(SimpleQueueMessageProcessor.class)
+@EnableBinding(UnstableQueueMessageBinding.class)
 @RequiredArgsConstructor
-public class SimpleQueueMessageHandler {
+public class UnstableQueueMessageHandler {
 
-    private final SimpleQueueMessageProcessor processor;
-
-    @StreamListener(SimpleQueueMessageProcessor.INPUT_NAME)
+    @StreamListener(UnstableQueueMessageBinding.INPUT_NAME)
     public void receive(
             QueueMessage<String> msg,
             @Header(name = "x-death", required = false) Map<?,?> death
@@ -37,25 +33,5 @@ public class SimpleQueueMessageHandler {
         }
         // if "requeue-rejected: false"  You can move message to DLQ by next Exception
         throw new AmqpRejectAndDontRequeueException("failed");
-    }
-
-    @StreamListener(SimpleQueueMessageProcessor.INPUT_NAME)
-    public void publish(QueueMessage<String> msg) {
-
-        processor.output().send(message(msg));
-    }
-
-    private static final <T> Message<T> message(T val) {
-        return MessageBuilder
-                .withPayload(val)
-                .build();
-    }
-
-    @Data
-    public static class QueueMessage<T> {
-
-        private String type;
-
-        private T payload;
     }
 }

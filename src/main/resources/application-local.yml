@@ -1,7 +1,14 @@
+server:
+  port: 8001
 management:
-  health:
-    binders:
-      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+#management:
+#  health:
+#    binders:
+#      enabled: true
 spring:
   cloud:
     stream:
@@ -9,15 +16,27 @@ spring:
         contentType: application/json
       bindings:
         simple-message-in:
-          group: consumerGroup            # just a part of queue name(ending) subscribed to 'destination'
+          group: consumer               # just a part of queue name(ending) subscribed to 'destination'
           destination: simple.message.in
-          max-attempts: 1
-          requeue-rejected: true
         simple-message-out:
           destination: simple.message.out
+        route-message-in:
+          group: consumer
+          destination: route.message.in
+        unstable-message-in:
+          group: consumer
+          destination: unstable.message.in
+          max-attempts: 1
+          requeue-rejected: true
       rabbit:
         bindings:
-          simple-message-in:
+          simple-message-out:
+            producer:
+              exchange-type: fanout
+          route-message-in:
+            consumer:
+              bindingRoutingKey: "http://cft.ru/daily_news"
+          unstable-message-in:
             consumer:
               #max-concurency: 1           # The maximum number of consumers. Not supported when the containerType is direct
               requeue-rejected: true
@@ -25,11 +44,9 @@ spring:
               auto-bind-dlq: true
               dlq-ttl: 5000               # Default time to live to apply to the dead letter queue when declared (in milliseconds)
               dlq-dead-letter-exchange:
-        simple-message-out:
-          producer:
-            exchange-type: fanout
+
         binders:
-          local_rabbit:
+          cluster_rabbit:
             type: rabbit
             environment:
               spring:
